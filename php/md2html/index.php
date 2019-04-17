@@ -9,8 +9,8 @@ if(!isset($_GET['url']) || ($str=curl_get_contents($_GET['url']))===false)
 $newLine="\\n|\\r|(\\r\\n)";
 $exceptNewLine="^(".$newLine.")";
 
-$pattern=$newLine."#######(".$exceptNewLine."*)".$newLine."/u";
-$replace='<h7>$2</h7>';
+$pattern=$newLine."######(".$exceptNewLine."*)".$newLine."/u";
+$replace='<h6>$2</h6>';
 $str=preg_replace($pattern, $replace, $str);
 /*
 正規表現「\\n#######(^\\r)*\\n」を、
@@ -68,5 +68,5 @@ $str='<html>
     </body>
 </html>";
 
-
+print $str;
 
