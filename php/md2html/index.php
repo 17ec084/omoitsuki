@@ -6,8 +6,8 @@ if(!isset($_GET['url']) || ($str=curl_get_contents($_GET['url']))===false)
     return;
 }
 
-$beginLine="^";
-$endLine="$";
+$beginLine="(^|\\r|\\n|\\r\\n)";
+$endLine="(\\r|\\n|\\r\\n|$)";
 $exceptNewLine="^(".$endLine.")";
 $d="~";//デリミタ
 
@@ -57,6 +57,7 @@ print $str;
 
     function h6to1($str,$conf)
     {
+
         $beginLine=$conf[0];
         $endLine=$conf[1];
         $exceptNewLine=$conf[2];
@@ -69,9 +70,10 @@ print $str;
             {
                 $sharp.="#";
             }
-            $pattern=$d.$beginLine.$sharp."(.*)".$endLine.$d."u";
-            $replace='<h'.$i.'>$1</h'.$i.'>';
+            $pattern=$d.$beginLine.$sharp." (.*)".$endLine.$d."u";
+            $replace='<h'.$i.'>$2</h'.$i.'>'."\n";
             $str=preg_replace($pattern, $replace, $str);
         }
+
         return $str;
     }
