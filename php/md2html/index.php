@@ -9,9 +9,10 @@ if(!isset($_GET['url']) || ($str=curl_get_contents($_GET['url']))===false)
 $beginLine="(^|\\r|\\n|\\r\\n)";
 $endLine="(\\r|\\n|\\r\\n|$)";
 $exceptNewLine="^(".$endLine.")";
+$space="( |\\t|\\r|\\n|\\r\\n)";
 $d="~";//デリミタ
 
-$conf=array($beginLine, $endLine, $exceptNewLine, $d);
+$conf=array($beginLine, $endLine, $exceptNewLine, $space, $d);
 //h6to1等々の関数に渡すとき、冗長化を防ぐ
 //本来はグローバル変数にすればいい話だが、lcrp関数にしたくなった時のことを考えると、そうしたくない。
 
@@ -20,6 +21,9 @@ $str=h6to1($str,$conf);
 //「#」をh6～1に変換
 //先にh1を置き換えようとするとh2～h6が誤検出される。パターンの冗長化を防ぐため、あえてこの問題を解決していない。
 
+$str=hole($str,$conf);
+//「<!-- hole 」と「-->」に囲まれた部分を、
+//「<input type="button" value="?" onClick="alert("(中身)");">」に置き換える
 
 $str='<html>
     <head>
@@ -61,7 +65,8 @@ print $str;
         $beginLine=$conf[0];
         $endLine=$conf[1];
         $exceptNewLine=$conf[2];
-        $d=$conf[3];//デリミタ
+        $space=$conf[3];
+        $d=$conf[4];//デリミタ
 
         for($i=6; $i>1-1; $i--)
         {
@@ -74,6 +79,34 @@ print $str;
             $replace='<h'.$i.'>$2</h'.$i.'>'."\n";
             $str=preg_replace($pattern, $replace, $str);
         }
+
+        return $str;
+    }
+
+    function hole($str, $conf)
+    {
+        $beginLine=$conf[0];
+        $endLine=$conf[1];
+        $exceptNewLine=$conf[2];
+        $space=$conf[3];
+        $d=$conf[4];//デリミタ
+$pattern=$d.
+"<!".			//<!
+"\\-\\-".		//<!--
+"(".$space.")*".	//<!--(空白)
+"hole".			//<!--(空白)hole
+"(".$space.")*".	//<!--(空白)hole(空白)
+"([^".				//終了=
+  "(".				
+    "(".$space.")*".		//(空白)
+    "\\-\\->".			//(空白)-->
+  ")".
+"]*)".			//<!--(空白)hole(空白)(「終了」以外)
+"(".$space.")*".	//<!--(空白)hole(空白)(「終了」以外)(空白)
+"\\-\\->".		//<!--(空白)hole(空白)(「終了」以外)(空白)-->
+$d."u";
+        $replace='<input type="button" value="?" onclick="alert(\'$5\');">';
+        $str=preg_replace($pattern, $replace, $str);
 
         return $str;
     }
