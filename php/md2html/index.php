@@ -23,7 +23,11 @@ $str=h6to1($str,$conf);
 
 $str=hole($str,$conf);
 //「<!-- hole 」と「-->」に囲まれた部分を、
-//「<input type="button" value="?" onClick="alert("(中身)");">」に置き換える
+//「<input type="button" value="?" onClick="alert('(中身)');">」に置き換える
+
+$str=lc($str,$conf);
+//「<!-- lc -->」の部分を、
+//「<input type="button" value="非公開情報" onClick="alert('非公開情報です。交換条件を満たし、ライセンスを取得してください');">」に置き換える
 
 $str='<html>
     <head>
@@ -90,22 +94,52 @@ print $str;
         $exceptNewLine=$conf[2];
         $space=$conf[3];
         $d=$conf[4];//デリミタ
-$pattern=$d.
-"<!".			//<!
-"\\-\\-".		//<!--
-"(".$space.")*".	//<!--(空白)
-"hole".			//<!--(空白)hole
-"(".$space.")*".	//<!--(空白)hole(空白)
-"([^".				//終了=
-  "(".				
-    "(".$space.")*".		//(空白)
-    "\\-\\->".			//(空白)-->
-  ")".
-"]*)".			//<!--(空白)hole(空白)(「終了」以外)
-"(".$space.")*".	//<!--(空白)hole(空白)(「終了」以外)(空白)
-"\\-\\->".		//<!--(空白)hole(空白)(「終了」以外)(空白)-->
-$d."u";
+
+        $pattern=$d.
+        "<!".			//<!
+        "\\-\\-".		//<!--
+        "(".$space.")*".	//<!--(空白)
+        "hole".			//<!--(空白)hole
+        "(".$space.")+".	//<!--(空白)hole(空白)
+        "([^".			//終了=
+          "(".				
+            "(".$space.")*".	//(空白)
+            "\\-\\->".		//(空白)-->
+          ")".
+        "]*)".			//<!--(空白)hole(空白)(「終了」以外)
+        "(".$space.")*".	//<!--(空白)hole(空白)(「終了」以外)(空白)
+        "\\-\\->".		//<!--(空白)hole(空白)(「終了」以外)(空白)-->
+        $d."u";
         $replace='<input type="button" value="?" onclick="alert(\'$5\');">';
+        $str=preg_replace($pattern, $replace, $str);
+
+        return $str;
+    }
+
+    function lc($str, $conf)
+    {
+        $beginLine=$conf[0];
+        $endLine=$conf[1];
+        $exceptNewLine=$conf[2];
+        $space=$conf[3];
+        $d=$conf[4];//デリミタ
+
+        $pattern=$d.
+        "<!".			//<!
+        "\\-\\-".		//<!--
+        "(".$space.")*".	//<!--(空白)
+        "lc".			//<!--(空白)hole
+        "(".$space.")+".	//<!--(空白)hole(空白)
+        "([^".			//終了=
+          "(".				
+            "(".$space.")*".	//(空白)
+            "\\-\\->".		//(空白)-->
+          ")".
+        "]*)".			//<!--(空白)hole(空白)(「終了」以外)
+        "(".$space.")*".	//<!--(空白)hole(空白)(「終了」以外)(空白)
+        "\\-\\->".		//<!--(空白)hole(空白)(「終了」以外)(空白)-->
+        $d."u";
+        $replace='<input type="button" value="非公開情報" onclick="alert(\'非公開情報です。交換条件を満たし、ライセンスを取得してください\');">';
         $str=preg_replace($pattern, $replace, $str);
 
         return $str;
