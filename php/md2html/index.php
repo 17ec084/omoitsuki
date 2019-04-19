@@ -44,6 +44,9 @@ $str=quote($str,$conf);
 //「(beginLine)(space)>...(改行)」を「<span style="padding-left: *em; background-color: #******; color: #000000;/*quote*/">...</span>」に置き換える。
 //「/*quote*/">(空白)>...</span>」を「/*quote*/"><span...</span></span>」置き換える。
 
+//$str=inlineCode($str,$conf);
+//「`」に囲まれた文字列(改行無し)を、「<table bgcolor="#FEE"><tbody><tr><td><code><xmp>」と「</xmp></code></td></tr></tbody></table>」で囲む
+
 $str=br($str,$conf);
 //スペース2連続と改行の連続を、<br>に書き換える
 
@@ -261,6 +264,50 @@ $d."u";
         return $str;
     }
 
+    function quote($str, $conf)
+    {
+
+        //仕様:6重ネストにまでしか対応しない。面倒だから。
+        //仕様:ネストは2重の中に3重、3重の中に4重となるようにする。2重からいきなり4重などにしても対応しない。
+        //仕様:一度より深いネストへ入ったら、浅いネストを生成することは禁止する。
+        //仕様:「>」同士の間に空白を入れないこと。これに対応するのは面倒なので、対応してない。
+
+        $beginLine=$conf[0];
+        $endLine=$conf[1];
+        $exceptNewLine=$conf[2];
+        $space=$conf[3];
+        $d=$conf[4];//デリミタ
+
+        $pattern=$d."(".$beginLine.">>>>>>.*)".$endLine.">>>>>>".$d."u";
+        $replace='$1';
+        $str=preg_replace($pattern, $replace, $str);
+
+        $pattern=$d.$beginLine.">>>>>>".$space."*(.*)".$endLine.">>>>>>".$d."u";
+
+/*
+        while(preg_match($d."\\/\\*quote\\*\\/\\">".$space."*>".$d,$str)!==false)
+        {
+            
+        }
+*/
+        return $str;
+    }
+
+    function inlineCode($str, $conf)
+    {
+        $beginLine=$conf[0];
+        $endLine=$conf[1];
+        $exceptNewLine=$conf[2];
+        $space=$conf[3];
+        $d=$conf[4];//デリミタ
+
+        $pattern=$d.$space."`"."([^`]*)"."`".$space.$d."u";
+        $replace="\n".'<!-- 次行以降変換除外 --><table bgcolor="#FEE"><tbody><tr><td><code><xmp>'."\n".'$2'."\n".'</xmp></code></td></tr></tbody></table><!-- 前行以前変換除外 -->'."\n";
+        $str=preg_replace($pattern, $replace, $str);
+
+        return $str;
+    }
+
     function br($str, $conf)
     {
         $beginLine=$conf[0];
@@ -275,54 +322,3 @@ $d."u";
 
         return $str;
     }
-
-    function quote($str, $conf)
-    {
-
-        //仕様:6重ネストにまでしか対応しない。面倒だから。
-        //仕様:ネストは2重の中に3重、3重の中に4重となるようにする。2重からいきなり4重などにしても対応しない。
-        //仕様:一度より深いネストへ入ったら、浅いネストを生成することは禁止する。
-
-        $beginLine=$conf[0];
-        $endLine=$conf[1];
-        $exceptNewLine=$conf[2];
-        $space=$conf[3];
-        $d=$conf[4];//デリミタ
-
-        $pattern=$d.$beginLine.">".$space."*>".$space."*>".$space."*>".$space."*>".$space."*>"."((.|".$endLine.")*)".$endLine."[^>]".$d."u";
-        $replace="\n".'<span style="padding-left: 4em; background-color: #999999; color: #000000; display: block;/*quote*/">$7</span>'."<br>\n";
-        $str=preg_replace($pattern, $replace, $str);
-
-        $pattern=$d.$beginLine.">".$space."*>".$space."*>".$space."*>".$space."*>"."((.|".$endLine.")*)".$endLine."[^>]".$d."u";
-        $replace="\n".'<span style="padding-left: 4em; background-color: #AAAAAA; color: #000000; display: block;/*quote*/">$6</span>'."<br>\n";
-        $str=preg_replace($pattern, $replace, $str);
-
-        $pattern=$d.$beginLine.">".$space."*>".$space."*>".$space."*>"."((.|".$endLine.")*)".$endLine."[^>]".$d."u";
-        $replace="\n".'<span style="padding-left: 4em; background-color: #BBBBBB; color: #000000; display: block;/*quote*/">$5</span>'."<br>\n";
-        $str=preg_replace($pattern, $replace, $str);
-
-        $pattern=$d.$beginLine.">".$space."*>".$space."*>"."((.|".$endLine.")*)".$endLine."[^>]".$d."u";
-        $replace="\n".'<span style="padding-left: 4em; background-color: #CCCCCC; color: #000000; display: block;/*quote*/">$4</span>'."<br>\n";
-        $str=preg_replace($pattern, $replace, $str);
-
-        $pattern=$d.$beginLine.">".$space."*>"."((.|".$endLine.")*)".$endLine."[^>]".$d."u";
-        $replace="\n".'<span style="padding-left: 4em; background-color: #DDDDDD; color: #000000; display: block;/*quote*/">$3</span>'."<br>\n";
-        $str=preg_replace($pattern, $replace, $str);
-
-        $pattern=$d.$beginLine.">"."((.|".$endLine.")*)".$endLine."[^>]".$d."u";
-//        $pattern=$d.$beginLine.$space."*>"."(.*)".$endLine.$d."u";
-        $replace="\n".'<span style="padding-left: 4em; background-color: #EEEEEE; color: #000000; display: block;/*quote*/">$2</span>'."<br>\n";
-        $str=preg_replace($pattern, $replace, $str);
-
-/*
-        while(preg_match($d."\\/\\*quote\\*\\/\\">".$space."*>".$d,$str)!==false)
-        {
-            
-        }
-*/
-        return $str;
-    }
-
-//$str=quote($str,$conf);
-//「(beginLine)(space)>...(改行)」を「<span style="padding-left: *em; background-color: #******; color: #000000;/*quote*/">...</span>」に置き換える。
-//「/*quote*/">(空白)>...</span>」を「/*quote*/"><span...</span></span>」置き換える。
