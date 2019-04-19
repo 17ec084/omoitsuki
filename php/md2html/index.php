@@ -16,6 +16,8 @@ $conf=array($beginLine, $endLine, $exceptNewLine, $space, $d);
 //h6to1等々の関数に渡すとき、冗長化を防ぐ
 //本来はグローバル変数にすればいい話だが、lcrp関数にしたくなった時のことを考えると、そうしたくない。
 
+$str=absPasser($str,$conf);
+//[]内に相対パス(httpが先頭に無いもの)があったら、絶対パスに書き換える
 
 $str=h6to1($str,$conf);
 //「#」をh6～1に変換
@@ -28,6 +30,22 @@ $str=hole($str,$conf);
 $str=lc($str,$conf);
 //「<!-- lc -->」の部分を、
 //「<input type="button" value="非公開情報" onClick="alert('非公開情報です。交換条件を満たし、ライセンスを取得してください');">」に置き換える
+
+$str=hr($str,$conf);
+//「 ---- 」を<hr>に書き換える(左右に空白が必要)
+
+$str=img($str,$conf);
+//「![*](*)」をimgタグに書き換える(左右に空白が必要)
+
+$str=a($str,$conf);
+//「[*](*)」をaタグに書き換える(左右に空白が必要)
+
+$str=quote($str,$conf);
+//「(beginLine)(space)>...(改行)」を「<span style="padding-left: *em; background-color: #******; color: #000000;/*quote*/">...</span>」に置き換える。
+//「/*quote*/">(空白)>...</span>」を「/*quote*/"><span...</span></span>」置き換える。
+
+$str=br($str,$conf);
+//スペース2連続と改行の連続を、<br>に書き換える
 
 $str='<html>
     <head>
@@ -61,6 +79,29 @@ print $str;
         $result = curl_exec( $ch );
         curl_close( $ch );
         return $result;
+    }
+
+    function absPasser($str,$conf)
+    {
+        //仕様: ../など、上の階層に戻る内容の相対パスはさすがに対応しきれない
+        $beginLine=$conf[0];
+        $endLine=$conf[1];
+        $exceptNewLine=$conf[2];
+        $space=$conf[3];
+        $d=$conf[4];//デリミタ
+
+        $pattern=$d."\\[([^\\]]*)\\]".$space."*"."\\(".$space."*"."(((?!\http|\\]).)*)".$space."*\\)".$d."u";
+        //[(]以外)](空白)((空白)(非http)(非]))        
+
+        $parentPass=preg_replace($d."((?!http(.)*\\/).)"."((?!\\/|\\.md).)+\\.md".$d."u", '${1}', $_GET['url']);
+        //代替案(上のディレクトリ名に「.md」が含まれると誤作動しうる)$dir=preg_replace($d."(^(http(.)*\\/))"."(.)+\\.md".$d."u", 'aaaa${1}bbbb', $_GET['url']);
+        //mdファイルを格納しているディレクトリ
+        $str=preg_replace($pattern, '[$1]('.$parentPass.'${4})', $str);
+
+        //正規表現がどうしてもうまく動かないので、一部str_replaceを使ってごまかす。
+        $str=str_replace($parentPass."http", "http", $str);
+
+        return $str;
     }
 
     function h6to1($str,$conf)
@@ -145,3 +186,143 @@ print $str;
         return $str;
     }
 
+    function hr($str, $conf)
+    {
+        $beginLine=$conf[0];
+        $endLine=$conf[1];
+        $exceptNewLine=$conf[2];
+        $space=$conf[3];
+        $d=$conf[4];//デリミタ
+
+        $pattern=$d.$space."\\-\\-\\-\\-".$space.$d."u";
+        $replace="\n<hr>\n";
+        $str=preg_replace($pattern, $replace, $str);
+
+        return $str;
+    }
+
+    function img($str, $conf)
+    {
+        $beginLine=$conf[0];
+        $endLine=$conf[1];
+        $exceptNewLine=$conf[2];
+        $space=$conf[3];
+        $d=$conf[4];//デリミタ
+
+$pattern=$d.
+$space."!\\[".		//![
+$space."*".		//![(空白)
+"([^\\]]*)".		//![(空白)(]以外)
+$space."*".		//![(空白)(]以外)(空白)
+"\\]".			//![(空白)(]以外)(空白)]
+$space."*".		//![(空白)(]以外)(空白)](空白)
+"\\(".			//![(空白)(]以外)(空白)](空白)（
+$space."*".		//![(空白)(]以外)(空白)](空白)（(空白)
+"([^\\)]*)".		//![(空白)(]以外)(空白)](空白)（(空白)(「）」以外)
+"\\)".			//![(空白)(]以外)(空白)](空白)（(空白)(「）」以外)）
+$space.			//![(空白)(]以外)(空白)](空白)（(空白)(「）」以外)）(空白)
+$d."u";
+//.  $space."*".  "\\("."([^\\)]*)"."\\)".$space.$d."u";
+//        $pattern=$d.$space."!\\["."([^\\]*])"."\\("."([^\\)*])".")".$space.$d."u";
+        $replace=' <img src="$7" alt="$3" title="$3"> ';
+        $str=preg_replace($pattern, $replace, $str);
+
+
+        return $str;
+    }
+
+    function a($str, $conf)
+    {
+        $beginLine=$conf[0];
+        $endLine=$conf[1];
+        $exceptNewLine=$conf[2];
+        $space=$conf[3];
+        $d=$conf[4];//デリミタ
+
+$pattern=$d.
+$space."\\[".		//[
+$space."*".		//[(空白)
+"([^\\]]*)".		//[(空白)(]以外)
+$space."*".		//[(空白)(]以外)(空白)
+"\\]".			//[(空白)(]以外)(空白)]
+$space."*".		//[(空白)(]以外)(空白)](空白)
+"\\(".			//[(空白)(]以外)(空白)](空白)（
+$space."*".		//[(空白)(]以外)(空白)](空白)（(空白)
+"([^\\)]*)".		//[(空白)(]以外)(空白)](空白)（(空白)(「）」以外)
+"\\)".			//[(空白)(]以外)(空白)](空白)（(空白)(「）」以外)）
+$space.			//[(空白)(]以外)(空白)](空白)（(空白)(「）」以外)）(空白)
+$d."u";
+//.  $space."*".  "\\("."([^\\)]*)"."\\)".$space.$d."u";
+//        $pattern=$d.$space."!\\["."([^\\]*])"."\\("."([^\\)*])".")".$space.$d."u";
+        $replace=' <a href="$7" alt="$3" title="$3">$3</a> ';
+        $str=preg_replace($pattern, $replace, $str);
+
+
+        return $str;
+    }
+
+    function br($str, $conf)
+    {
+        $beginLine=$conf[0];
+        $endLine=$conf[1];
+        $exceptNewLine=$conf[2];
+        $space=$conf[3];
+        $d=$conf[4];//デリミタ
+
+        $pattern=$d.$space.$space.$endLine.$d."u";
+        $replace="<br>\n";
+        $str=preg_replace($pattern, $replace, $str);
+
+        return $str;
+    }
+
+    function quote($str, $conf)
+    {
+
+        //仕様:6重ネストにまでしか対応しない。面倒だから。
+        //仕様:ネストは2重の中に3重、3重の中に4重となるようにする。2重からいきなり4重などにしても対応しない。
+        //仕様:一度より深いネストへ入ったら、浅いネストを生成することは禁止する。
+
+        $beginLine=$conf[0];
+        $endLine=$conf[1];
+        $exceptNewLine=$conf[2];
+        $space=$conf[3];
+        $d=$conf[4];//デリミタ
+
+        $pattern=$d.$beginLine.">".$space."*>".$space."*>".$space."*>".$space."*>".$space."*>"."((.|".$endLine.")*)".$endLine."[^>]".$d."u";
+        $replace="\n".'<span style="padding-left: 4em; background-color: #999999; color: #000000; display: block;/*quote*/">$7</span>'."<br>\n";
+        $str=preg_replace($pattern, $replace, $str);
+
+        $pattern=$d.$beginLine.">".$space."*>".$space."*>".$space."*>".$space."*>"."((.|".$endLine.")*)".$endLine."[^>]".$d."u";
+        $replace="\n".'<span style="padding-left: 4em; background-color: #AAAAAA; color: #000000; display: block;/*quote*/">$6</span>'."<br>\n";
+        $str=preg_replace($pattern, $replace, $str);
+
+        $pattern=$d.$beginLine.">".$space."*>".$space."*>".$space."*>"."((.|".$endLine.")*)".$endLine."[^>]".$d."u";
+        $replace="\n".'<span style="padding-left: 4em; background-color: #BBBBBB; color: #000000; display: block;/*quote*/">$5</span>'."<br>\n";
+        $str=preg_replace($pattern, $replace, $str);
+
+        $pattern=$d.$beginLine.">".$space."*>".$space."*>"."((.|".$endLine.")*)".$endLine."[^>]".$d."u";
+        $replace="\n".'<span style="padding-left: 4em; background-color: #CCCCCC; color: #000000; display: block;/*quote*/">$4</span>'."<br>\n";
+        $str=preg_replace($pattern, $replace, $str);
+
+        $pattern=$d.$beginLine.">".$space."*>"."((.|".$endLine.")*)".$endLine."[^>]".$d."u";
+        $replace="\n".'<span style="padding-left: 4em; background-color: #DDDDDD; color: #000000; display: block;/*quote*/">$3</span>'."<br>\n";
+        $str=preg_replace($pattern, $replace, $str);
+
+        $pattern=$d.$beginLine.">"."((.|".$endLine.")*)".$endLine."[^>]".$d."u";
+//        $pattern=$d.$beginLine.$space."*>"."(.*)".$endLine.$d."u";
+        $replace="\n".'<span style="padding-left: 4em; background-color: #EEEEEE; color: #000000; display: block;/*quote*/">$2</span>'."<br>\n";
+        $str=preg_replace($pattern, $replace, $str);
+
+/*
+        while(preg_match($d."\\/\\*quote\\*\\/\\">".$space."*>".$d,$str)!==false)
+        {
+            
+        }
+*/
+        return $str;
+    }
+
+//$str=quote($str,$conf);
+//「(beginLine)(space)>...(改行)」を「<span style="padding-left: *em; background-color: #******; color: #000000;/*quote*/">...</span>」に置き換える。
+//「/*quote*/">(空白)>...</span>」を「/*quote*/"><span...</span></span>」置き換える。
