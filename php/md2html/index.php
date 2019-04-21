@@ -368,11 +368,28 @@ hoge\n
         $endLine=$conf[1];
         $exceptNewLine=$conf[2];
         $space=$conf[3];
+        $spaceOrEndLine='('.$space.'|'.$endLine.')';
         $d=$conf[4];//デリミタ
 
-        $pattern=$d.$space."`"."([^`.]*)"."`".$space.$d."u";
-        $replace="\n".'<!-- 次行以降変換除外 -->'."\n".'<table bgcolor="#FEE"><tbody><tr><td><code><xmp>$2'."\n".'</xmp></code></td></tr></tbody></table>'."\n".'<!-- 前行以前変換除外 -->'."\n";
-        $str=preg_replace($pattern, $replace, $str);
+        while(preg_match($d.$space."`"."([^`.]+)"."`".$spaceOrEndLine.$d."u", $str)!=0)
+        {
+            $pattern=$d.$space."`"."([^`.]+)"."`".$spaceOrEndLine.$d."u";
+            //$replace="\n".'<!-- 次行以降変換除外 -->'."\n".'<table bgcolor="#FEE"><tbody><tr><td><code><xmp>$2</xmp></code></td></tr></tbody></table>'."\n".'<!-- 前行以前変換除外 -->'."\n";
+            $replace="\n".'<!-- 次行以降変換除外 -->'."\n".'<code style="background-color: rgba(27,31,35,.05); border-radius: 3px; font-size: 85%; margin: 0; padding: .2em .4em;">$2</code>'."\n".'<!-- 前行以前変換除外 -->'."\n";
+            $str=preg_replace($pattern, $replace, $str);
+        }
+
+        //以上で、コード用のタグへ変換完了
+        //以下、改行を取り除くために、(必要に応じて)さらにタグを書き換える。
+/*
+        $pattern=$d."<\\/tr><\\/tbody><\\/table>\\n<!\\-\\- 前行以前変換除外 \\-\\->
+
+</tr></tbody></table>
+<!-- 前行以前変換除外 -->
+(この部分に、改行が無ければよい)
+<!-- 次行以降変換除外 -->
+<table bgcolor="#FEE"><tbody><tr>
+*/
 
         return $str;
     }
