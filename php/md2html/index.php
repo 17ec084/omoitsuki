@@ -1,4 +1,9 @@
 <?php
+include "include/getTextFromTo.php";
+include "include/str_replace_once.php";
+?>
+
+<?php
 
 if(!isset($_GET['url']) || ($str=curl_get_contents($_GET['url']))===false)
 {
@@ -15,6 +20,19 @@ $d="~";//デリミタ
 $conf=array($beginLine, $endLine, $exceptNewLine, $space, $d);
 //h6to1等々の関数に渡すとき、冗長化を防ぐ
 //本来はグローバル変数にすればいい話だが、lcrp関数にしたくなった時のことを考えると、そうしたくない。
+
+$str=inlineCode($str,$conf);
+//「`」に囲まれた文字列(改行無し)を、「<table bgcolor="#FEE"><tbody><tr><td><code><xmp>」と「</xmp></code></td></tr></tbody></table>」で囲む
+
+//$str=multiCode($str,$conf);
+//「```」に囲まれた文字列(改行あり)を、「<br><table bgcolor="#FEE"><tbody><tr><td><code><xmp>」と「</xmp></code></td></tr></tbody></table><br>」で囲む
+
+//$str=escape($str);
+//コードを示す範囲内では、通常の処理(h6～1への変換や、改行など)を行うべきではない。
+//そのために、コードを示す範囲内にある、処理されうる文字を何らかの処理されえない文字に、一時的に書き換えておく。
+
+
+
 
 $str=absPasser($str,$conf);
 //[]内に相対パス(httpが先頭に無いもの)があったら、絶対パスに書き換える
@@ -43,9 +61,6 @@ $str=a($str,$conf);
 $str=quote($str,$conf);
 //「(beginLine)(space)>...(改行)」を「<span style="padding-left: *em; background-color: #******; color: #000000;/*quote*/">...</span>」に置き換える。
 //「/*quote*/">(空白)>...</span>」を「/*quote*/"><span...</span></span>」置き換える。
-
-//$str=inlineCode($str,$conf);
-//「`」に囲まれた文字列(改行無し)を、「<table bgcolor="#FEE"><tbody><tr><td><code><xmp>」と「</xmp></code></td></tr></tbody></table>」で囲む
 
 $str=br($str,$conf);
 //スペース2連続と改行の連続を、<br>に書き換える
@@ -267,29 +282,83 @@ $d."u";
     function quote($str, $conf)
     {
 
-        //仕様:6重ネストにまでしか対応しない。面倒だから。
-        //仕様:ネストは2重の中に3重、3重の中に4重となるようにする。2重からいきなり4重などにしても対応しない。
-        //仕様:一度より深いネストへ入ったら、浅いネストを生成することは禁止する。
-        //仕様:「>」同士の間に空白を入れないこと。これに対応するのは面倒なので、対応してない。
-
+        //仕様:ネストには対応しない。面倒だから。
+        //引用を分割するとき、本来は1行だけ開ければよいが、readerの場合は2行開けること
+        //そのほうが処理が簡単だから。
         $beginLine=$conf[0];
         $endLine=$conf[1];
         $exceptNewLine=$conf[2];
-        $space=$conf[3];
+        $space="( |\\t)";//変更。
         $d=$conf[4];//デリミタ
+/*
+例:
 
-        $pattern=$d."(".$beginLine.">>>>>>.*)".$endLine.">>>>>>".$d."u";
-        $replace='$1';
+hoge\n
+   \n
+> 1  \n
+> 2  \n
+> 3\n
+ \n
+ \n
+> 4\n
+ \n
+
+*/
+        $pattern=$d.$beginLine.$space."*".$endLine.">".$d."u";
+        $replace="\n<!-- quote -->\n>";
         $str=preg_replace($pattern, $replace, $str);
 
-        $pattern=$d.$beginLine.">>>>>>".$space."*(.*)".$endLine.">>>>>>".$d."u";
-
+        $pattern=$d."(".$beginLine.">.*".$endLine.")".$space."*".$endLine.$d."u";
+        $replace='$1<!-- quote -->'."\n";
+        $str=preg_replace($pattern, $replace, $str);
 /*
-        while(preg_match($d."\\/\\*quote\\*\\/\\">".$space."*>".$d,$str)!==false)
-        {
-            
-        }
+例:
+
+hoge\n
+<!-- quote -->\n
+> 1  \n
+> 2  \n
+> 3\n
+<!-- quote -->
+<!-- quote -->
+> 4\n
+<!-- quote -->
+
 */
+
+        while(strpos($str, "<!-- quote -->")!==false)
+        {
+            $len=strlen("<!-- quote -->");
+            //$str=
+            //a<!-- quote -->b<!-- quote -->c<!-- quote -->d...
+            $l=strpos($str, "<!-- quote -->");
+            $quote=substr($str, $l);
+            //<!-- quote -->b<!-- quote -->c<!-- quote -->d...
+            $tmp=substr($quote, $len);
+            //b<!-- quote -->c<!-- quote -->d...
+            $r=strpos($tmp, "<!-- quote -->")+$len*2;
+            $originalQuote=$quote=substr($quote, 0, $r);
+            //<!-- quote -->b<!-- quote -->
+
+            while(preg_match($d.$space.$space.$endLine.">".$d."u", $quote)!=0)
+            //preg_matchはmatchしなかった場合は0を返す。
+            //strposとは違うので要要要注意
+            {
+                $pattern=$d.$space.$space.$endLine.">".$d."u";
+                $replace="<br>";
+                $quote=preg_replace($pattern, $replace, $quote);
+            }
+
+            $tmp=substr($quote, $len, strlen($quote)-$len*2);
+//print "\nstr=".$str."\nquote=".$quote;
+
+
+            $quoteAfter='<span style="padding-left: 4em; background-color: #DDDDDD; color: #000000; display: block;/*quote*/">'.$tmp.'</span>';
+            $str=str_replace_once($originalQuote, $quoteAfter, $str, 0);
+        }
+
+        $str=str_replace('<span style="padding-left: 4em; background-color: #DDDDDD; color: #000000; display: block;/*quote*/">'."\n>", '<span style="padding-left: 4em; background-color: #DDDDDD; color: #000000; display: block;/*quote*/">'."\n",$str);
+
         return $str;
     }
 
@@ -301,8 +370,8 @@ $d."u";
         $space=$conf[3];
         $d=$conf[4];//デリミタ
 
-        $pattern=$d.$space."`"."([^`]*)"."`".$space.$d."u";
-        $replace="\n".'<!-- 次行以降変換除外 --><table bgcolor="#FEE"><tbody><tr><td><code><xmp>'."\n".'$2'."\n".'</xmp></code></td></tr></tbody></table><!-- 前行以前変換除外 -->'."\n";
+        $pattern=$d.$space."`"."([^`.]*)"."`".$space.$d."u";
+        $replace="\n".'<!-- 次行以降変換除外 -->'."\n".'<table bgcolor="#FEE"><tbody><tr><td><code><xmp>$2'."\n".'</xmp></code></td></tr></tbody></table>'."\n".'<!-- 前行以前変換除外 -->'."\n";
         $str=preg_replace($pattern, $replace, $str);
 
         return $str;
