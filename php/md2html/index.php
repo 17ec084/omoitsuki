@@ -75,8 +75,43 @@ $str='<html>
         <title>
             README.md READER developed by 17ec084
         </title>
+        <style>
+.qBtn
+{
+    height: 30px;
+    width: 30px;
+    border-top: solid 2px #916a5c;
+    border-left: solid 2px #916a5c;
+    border-right: solid 2px #000;
+    border-bottom: solid 2px #000;
+    background-color: #f5e02e;
+    color: #916a5c;
+    font-size: 20px;
+    text-shadow: 1px 1px 0px #000;
+    font-weight: 700;
+    text-align:center;
+    border-radius: 3px 3px 0px 0px;
+    animation: bg-color 0.7s infinite;
+}
+
+@-webkit-keyframes bg-color {
+  0% { background-color: #ffa407; }
+  45% { background-color: #ffa407; }
+  70% { background-color: #ab6e04; }
+  90% { background-color: #ffa407; }
+  100% { background-color: #ffa407; }
+}
+@keyframes bg-color {
+  0% { background-color: #ffa407; }
+  45% { background-color: #ffa407; }
+  70% { background-color: #ab6e04; }
+  90% { background-color: #ffa407; }
+  100% { background-color: #ffa407; }
+}
+        </style>
     </head>
     <body>
+<big><big><big>メンテ中</big></big></big><br><script>alert("メンテ中。")</script>
         お知らせ:<br>README.md READERのデベロパが
         <a href="http://rights-for.men/">任意団体 男性会議</a>
         を立ち上げました。<br>
@@ -165,16 +200,19 @@ print $str;
         "(".$space.")*".	//<!--(空白)
         "hole".			//<!--(空白)hole
         "(".$space.")+".	//<!--(空白)hole(空白)
+/*
         "([^".			//終了=
           "(".				
             "(".$space.")*".	//(空白)
             "\\-\\->".		//(空白)-->
           ")".
         "]*)".			//<!--(空白)hole(空白)(「終了」以外)
+*/
+        "(((?!\\-\\->).)*?)".
         "(".$space.")*".	//<!--(空白)hole(空白)(「終了」以外)(空白)
         "\\-\\->".		//<!--(空白)hole(空白)(「終了」以外)(空白)-->
         $d."u";
-        $replace='<input type="button" value="?" onclick="alert(\'$5\');">';
+        $replace='<input id="qBtn" class="qBtn" type="button" value="?" onclick="alert(\'$5\');">';
         $str=preg_replace($pattern, $replace, $str);
 
         return $str;
