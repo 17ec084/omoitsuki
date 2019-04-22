@@ -111,7 +111,7 @@ $str='<html>
         </style>
     </head>
     <body>
-<big><big><big>メンテ中</big></big></big><br><script>alert("メンテ中。")</script>
+<!--<big><big><big>メンテ中</big></big></big><br><script>alert("メンテ中。")</script>-->
         お知らせ:<br>README.md READERのデベロパが
         <a href="http://rights-for.men/">任意団体 男性会議</a>
         を立ち上げました。<br>
@@ -208,7 +208,7 @@ print $str;
           ")".
         "]*)".			//<!--(空白)hole(空白)(「終了」以外)
 */
-        "(((?!\\-\\->).)*?)".
+        "(((?!\\-\\->).)*?)".   //参考:https://nymemo.com/phpcate/293/
         "(".$space.")*".	//<!--(空白)hole(空白)(「終了」以外)(空白)
         "\\-\\->".		//<!--(空白)hole(空白)(「終了」以外)(空白)-->
         $d."u";
