@@ -27,10 +27,11 @@ $str=inlineCode($str,$conf);
 $str=multiCode($str,$conf);
 //「```」に囲まれた文字列(改行あり)を、<code>(style付き)タグで囲む
 
-//$str=escape($str);
-//コードを示す範囲内では、通常の処理(h6～1への変換や、改行など)を行うべきではない。
+$str=escape($str);
+//例えばコードを示す範囲内では、通常の処理(h6～1への変換や、改行など)を行うべきではない。
 //そのために、コードを示す範囲内にある、処理されうる文字を何らかの処理されえない文字に、一時的に書き換えておく。
-
+//最も確実なのは(mb)文字を1文字ずつ数値に変換しておくこと(bin2hex関数)
+//参考: https://kjirou.github.io/old-sorenari-blog/articles/450.html
 
 
 
@@ -64,6 +65,10 @@ $str=quote($str,$conf);
 
 $str=br($str,$conf);
 //スペース2連続と改行の連続を、<br>に書き換える
+
+$str=releaseEscape($str, $conf);
+//escape関数で一時的に書き換えておいた文字を復元(hex2bin関数)
+
 
 $str='<html>
     <head>
@@ -397,6 +402,99 @@ hoge\n
             //$replace="\n".'<!-- 次行以降変換除外 -->'."\n".'<table bgcolor="#FEE"><tbody><tr><td><code><xmp>$2</xmp></code></td></tr></tbody></table>'."\n".'<!-- 前行以前変換除外 -->'."\n";
             $replace="\n".'<!-- 次行以降変換除外 -->'."\n".'<table style="background-color: rgba(27,31,35,.05); border-radius: 3px; font-size: 85%; margin: 0; padding: .2em .4em;"><tbody><tr><td><code><xmp>$2</xmp></code></td></tr></tbody></table>'."\n".'<!-- 前行以前変換除外 -->'."\n";
             $str=preg_replace($pattern, $replace, $str);
+        }
+
+        return $str;
+    }
+
+    function escape($str)
+    {
+
+        while(strpos($str, "<!-- 次行以降変換除外 -->\n")!==false)
+        //bin2hexのできていない部分がある間(＝「<!-- 次行以降変換除外 -->\n...」は変換前、「<!-- 次行以降変換除外 -->(\n以外)...」は変換後)
+        {
+            /*
+            「<!-- 次行以降変換除外 -->\n」と
+            「<!-- 前行以前変換除外 -->」に
+            囲まれた部分を検出。
+                より具体的に言うと、「<!-- 次行以降変換除外 -->直後の改行」から、
+                「(改行)<!-- 前行以前変換除外 -->の(改行)」
+                までを検出
+            */
+            $tmp=getTextFromTo($str, "<!-- 次行以降変換除外 -->\n", "\n<!-- 前行以前変換除外 -->", true);
+            $tmp2=getTextFromTo($tmp, "<!-- 次行以降変換除外 -->", "<!-- 前行以前変換除外 -->", false);
+
+            /*bin2hexを実行*/
+            $tmp2=bin2hex($tmp2);
+
+            /*置き換え実行*/
+            $str=str_replace_once($tmp, "<!-- 次行以降変換除外 -->".$tmp2."<!-- 前行以前変換除外 -->", $str, 0);
+
+        }
+
+        return $str;
+    }
+
+    function releaseEscape($str, $conf)
+    {
+        $beginLine=$conf[0];
+        $endLine=$conf[1];
+        $exceptNewLine=$conf[2];
+        $space=$conf[3];
+        $d=$conf[4];//デリミタ
+
+        while(preg_match($d."<!\\-\\- 次行以降変換除外 \\-\\->.".$d."u", $str)!=0)
+        {
+
+            //$startに、<!-- 次行以降変換除外 -->(改行以外)が現れる位置を示す数値を格納する
+            for
+            (
+                //初期化式
+                $start=0
+                ;
+                //継続条件式
+                !
+                (
+                    substr
+                    (
+                        $str,
+                        $start,
+                        strlen("<!-- 次行以降変換除外 -->")
+                    )
+                    ==
+                    "<!-- 次行以降変換除外 -->"
+                    &&
+                    substr
+                    (
+                        $str,
+                        $start+strlen("<!-- 次行以降変換除外 -->"),
+                        1
+                    )
+                    !="\n"
+                )
+                ;
+                //再初期化式
+                $start++
+            );
+
+            /*
+            「<!-- 次行以降変換除外 -->(\n以外)」と
+            「<!-- 前行以前変換除外 -->」に
+            囲まれた部分を検出
+                より具体的に言うと、「<!-- 次行以降変換除外 -->」から、
+                「<!-- 前行以前変換除外 -->」
+                 までを検出
+            */
+            $tmp=substr($str, $start);
+            $tmp2=getTextFromTo($tmp, "<!-- 次行以降変換除外 -->", "<!-- 前行以前変換除外 -->", false);
+            $tmp="<!-- 次行以降変換除外 -->".$tmp2."<!-- 前行以前変換除外 -->";
+
+            /*hex2binを実行*/
+            $tmp2=hex2bin($tmp2);
+
+            /*置き換え実行*/
+            $str=str_replace_once($tmp, "<!-- 次行以降変換除外 -->".$tmp2."<!-- 前行以前変換除外 -->", $str, 0);
+
         }
 
         return $str;
