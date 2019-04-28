@@ -118,6 +118,9 @@ $str='<html>
         <a href="https://www.change.org/p/%E5%A5%B3%E6%80%A7%E5%B0%82%E7%94%A8%E8%BB%8A%E4%B8%A1%E3%82%92%E5%B0%8E%E5%85%A5%E3%81%97%E3%81%A6%E3%81%84%E3%82%8B%E9%89%84%E9%81%93%E4%BC%9A%E7%A4%BE-%E7%94%B7%E6%80%A7%E5%B0%82%E7%94%A8%E8%BB%8A%E4%B8%A1%E3%81%AE%E5%B0%8E%E5%85%A5%E3%82%92%E6%B1%82%E3%82%81%E3%81%BE%E3%81%99">男性専用車両導入を求める署名運動</a>もしておりますので、ご協力ください。<br>
         (一部サービスは、こちらの署名への協力を条件に提供しております。ご了承ください)
         <hr>
+<!--バグ修正情報(メンテ実施=2019年4月22日19:00～19:45):<br>？ボタンに置き換えられ、クリックで答えが見れるようになる元の部分(holeコメントといいます。)の一部に、正しく？ボタンが生成されないバグがあったので、訂正しました。<br>原因は、正規表現における「否定」の概念が難しすぎることです(´;ω;｀)-->
+求人:痴漢冤罪の被害に遭われた方、もしくは知り合いにそういう人がいる方、いましたら basic@rights-for.men までお知らせください。この求人活動のために、当団体は5万円をすでに用意してあります(全て謝礼金に使うとは言っていない)。   
+        <hr>
 '.$str.'
     </body>
 </html>';
@@ -434,9 +437,9 @@ hoge\n
         $spaceOrEndLine='('.$space.'|'.$endLine.')';
         $d=$conf[4];//デリミタ
 
-        while(preg_match($d.$space."```"."([^(```)]+)"."```".$spaceOrEndLine.$d."u", $str)!=0)
+        while(preg_match($d.$space."```"."([^`]+)"."```".$spaceOrEndLine.$d."u", $str)!=0)
         {
-            $pattern=$d.$space."```"."([^(```)]+)"."```".$spaceOrEndLine.$d."u";
+            $pattern=$d.$space."```"."([^`]+)"."```".$spaceOrEndLine.$d."u";
             //$replace="\n".'<!-- 次行以降変換除外 -->'."\n".'<table bgcolor="#FEE"><tbody><tr><td><code><xmp>$2</xmp></code></td></tr></tbody></table>'."\n".'<!-- 前行以前変換除外 -->'."\n";
             $replace="\n".'<!-- 次行以降変換除外 -->'."\n".'<table style="background-color: rgba(27,31,35,.05); border-radius: 3px; font-size: 85%; margin: 0; padding: .2em .4em;"><tbody><tr><td><code><xmp>$2</xmp></code></td></tr></tbody></table>'."\n".'<!-- 前行以前変換除外 -->'."\n";
             $str=preg_replace($pattern, $replace, $str);
