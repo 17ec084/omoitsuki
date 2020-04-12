@@ -737,11 +737,11 @@ $x_3$の次元までを考え、$x_4$以降を無視したものが図2-3-2-1で
 
 この回転行列は
 
-$$R_{x_2x_4}(-\phi_4)R_{x_2x_3}(-\phi_3)$$
+$$R_{x_2x_4}(-\phi_3)R_{x_2x_3}(-\phi_2)$$
 
 となります。これを先ほどの回転行列に左からかけると、
 
-$$R:=R_{x_2x_4}(-\phi_4)R_{x_2x_3}(-\phi_3)R_{x_1x_4}(-\theta_4)R_{x_1x_3}(-\theta_3)R_{x_1x_2}(-\theta_2)$$
+$$R:=R_{x_2x_4}(-\phi_3)R_{x_2x_2}(-\phi_3)R_{x_1x_4}(-\theta_4)R_{x_1x_3}(-\theta_3)R_{x_1x_2}(-\theta_2)$$
 
 を得ます。
 
@@ -749,12 +749,14 @@ $$R:=R_{x_2x_4}(-\phi_4)R_{x_2x_3}(-\phi_3)R_{x_1x_4}(-\theta_4)R_{x_1x_3}(-\the
 
 
 
-以上の議論より、$x_1x_2x_3x_4$超空間におけるベクトルの回転は、次のような式で求めることができます。
+以上の議論より、$x_1x_2x_3x_4$超空間や$x_1～x_n$超空間におけるベクトルの回転は、次のような式で求めることができます。
 
 > <font color="black">
-4次元ベクトルにおいて、回転軸たる平面が直行基底$\boldsymbol{a_{xis1of2}}, \boldsymbol{a_{xis2of2}}$により張られるベクトル部分空間とみれるときを考える。
-$\boldsymbol{a_{xisiof2}}$を極座標変換した結果を
-$$\boldsymbol{a_{xisiof2}}:=\left(\begin{array}{aaa}
+$n$次元ベクトルにおいて、回転軸たる平面が直行基底$\boldsymbol{a_{xis1ofn-2}}, \boldsymbol{a_{xis2ofn-2}},...$により張られるベクトル部分空間とみれるときを考える。
+$R_i$は$\prod_{j=1}^{i-1} R_j, R_0=I$の直後に$x_i(i>0)$へ$\boldsymbol{a_{xisiof2}}$を重ねるための回転行列(の因数行列)であるとする。
+$\prod_{j=1}^{i-1} R_j$による回転を加えた系において、
+$\boldsymbol{a_{xisiofn-2}}$を極座標変換した結果を
+$$\boldsymbol{a_{xisiofn-2}}:=\left(\begin{array}{aaa}
 r_i\cos\theta_{i,n}\cos\theta_{i,n-1}\cos\theta_{i,n-2}...\cos\theta_{i,3}\cos\theta_{i,2}\\\\ 
 r_i\cos\theta_{i,n}\cos\theta_{i,n-1}\cos\theta_{i,n-2}...\cos\theta_{i,3}\sin\theta_{i,2}\\\\ 
 r_i\cos\theta_{i,n}\cos\theta_{i,n-1}\cos\theta_{i,n-2}...\sin\theta_{i,3}\\\\ 
@@ -762,9 +764,16 @@ r_i\cos\theta_{i,n}\cos\theta_{i,n-1}\cos\theta_{i,n-2}...\sin\theta_{i,3}\\\\
 r_i\cos\theta_{i,n}\cos\theta_{i,n-1}\sin\theta_{i,n-2}\\\\ 
 r_i\cos\theta_{i,n}\sin\theta_{i,n-1}\\\\ 
 r_i\sin\theta_{i,n}\end{array}\right)$$
-と書くとき
-
+(ただし$\theta_{k,l} (l>i+1, kは任意)$は常に0である)
+と書くとき、
+回転軸を$x_1x_2...x_{n-2}$超空間に重ねるための回転行列$R$は
+$$
+\begin{array}{aaa}
+R &&:=\prod_{i=n-2}^{1} R_i\\\\ &&:=\prod_{i=n-2}^{1} \prod_{j=i+1}^{n}R_{x_ix_j}(-\theta_{i,j-i+1})
+\end{array}$$
+とかける。
+ベクトル$v$を$\phi$だけ、回転軸に沿って回転させる回転行列は
+$$R^{-1}R_{x_{n-1}x_n}(\phi)R$$
+として得られる。
 </font>
 
-
-これをそのまま一般化することで、$n$次元超空間におけるベクトルの回転のアルゴリズムを得ます。
